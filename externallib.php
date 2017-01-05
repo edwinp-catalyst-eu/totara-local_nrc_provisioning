@@ -134,7 +134,7 @@ class local_userprovisioning_external extends external_api {
      *
      * @return external_single_structure
      */
-    public static function create_org_user_generation_returns() {
+    public static function create_org_user_returns() {
         return new external_single_structure(
             array(
                 'name' => new external_value(PARAM_TEXT, 'User full name'),
@@ -148,7 +148,7 @@ class local_userprovisioning_external extends external_api {
      *
      * @return external_multiple_structure
      */
-    public static function create_org_users_generation_returns() {
+    public static function create_org_users_returns() {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
