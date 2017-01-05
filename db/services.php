@@ -36,7 +36,7 @@ $functions = array(
         'classpath'   => 'local/userprovisioning/externallib.php',
         'description' => 'Create user and assign to organisation',
         'type'        => 'write',
-        'capabilities'=> 'local/userprovisioning:createorguser'
+        'capabilities'=> 'local/userprovisioning:createorgusers'
     ),
     'local_userprovisioning_create_org_users' => array(
         'classname'   => 'local_userprovisioning_external',
@@ -44,7 +44,7 @@ $functions = array(
         'classpath'   => 'local/userprovisioning/externallib.php',
         'description' => 'Create multiple users and assign to organisation',
         'type'        => 'write',
-        'capabilities'=> 'local/userprovisioning:createorguser'
+        'capabilities'=> 'local/userprovisioning:createorgusers'
     )
 );
 
