@@ -88,9 +88,10 @@ class local_userprovisioning_external extends external_api {
             throw new moodle_exception('error:cannotcreateorgusers', 'local_userprovisioning');
         }
 
-        list($name, $userid) = self::create_user($userparams, $orgid);
-
-        return array('name' => $name, 'userid' => $userid);
+        if ($orgid = $DB->get_field('org', 'id', array('shortname' => $userparams['org']))) {
+            list($name, $userid) = self::create_user($userparams, $orgid);
+            return array('name' => $name, 'userid' => $userid);
+        }
     }
 
     /**
@@ -166,80 +167,107 @@ class local_userprovisioning_external extends external_api {
      * @param int $orgid Organisation ID
      * @return array
      */
-    public function create_user($userparams, $orgid) {
+    public static function create_user($userparams, $orgid) {
+        global $DB;
 
         // Check if user exists by matching against employeeid custom user profile field.
-        if ($userid = $DB->get_field('user_info_data', 'userid',
-            array('fieldid' => $employeeidfield, 'data' => $userparams['employeeid']))) {
+        if ($employeeidfield = $DB->get_field('user_info_field', 'id',
+            array('shortname' => get_string('employeeiduifshortname', 'local_userprovisioning')))) {
 
-            // User exists - update user.
-            $user = new stdClass();
-            $user->id = $userid;
-            $user->firstname = $userparams['firstname'];
-            $user->lastname = $userparams['lastname'];
-            $user->email = $userparams['email'];
-            $DB->update_record('user', $user);
+            $sql = "SELECT userid
+                      FROM {user_info_data}
+                     WHERE fieldid = ?
+                       AND ". $DB->sql_compare_text('data') . " = ?";
+            $params = array($employeeidfield, $userparams['employeeid']);
 
-        } else {
+            if ($userid = $DB->get_field_sql($sql, $params)) {
 
-            // Create user.
-            $user = new stdClass();
-            $user->firstname = $userparams['firstname'];
-            $user->lastname = $userparams['lastname'];
-            $user->email = $userparams['email'];
-            $user->username = $userparams['email'];
-            $user->password = 'Password123+'; // TODO: Stage 2 of development will change auth type to SAML.
-            $user->lang = 'en';
-            $user->alternatename = '';
-            $user->confirmed = 0;
-            $user->firstaccess = 0;
-            $user->timecreated = time();
-            $user->mnethostid = $CFG->mnet_localhost_id;
-            $user->secret = random_string(15);
-            $user->auth = $CFG->registerauth;
+                // User exists - update user.
+                $user = new stdClass();
+                $user->id = $userid;
+                $user->firstname = $userparams['firstname'];
+                $user->lastname = $userparams['lastname'];
+                $user->email = $userparams['email'];
+                $DB->update_record('user', $user);
 
-            $authplugin = get_auth_plugin($CFG->registerauth);
-            $userid = $authplugin->user_signup($user);
-        }
+            } else {
 
-        // Insert/update user organisation.
-        $now = time();
-        if ($posassignid = $DB->get_field('pos_assignment', 'id',
-            array('organisationid' => $orgid, 'userid' => $userid))) {
+                // Create user.
+                $user = new stdClass();
+                $user->firstname = $userparams['firstname'];
+                $user->lastname = $userparams['lastname'];
+                $user->email = $userparams['email'];
+                $user->username = $userparams['email'];
+                $user->password = 'Password123+'; // TODO: Stage 2 of development will change auth type to SAML.
+                $user->lang = 'en';
+                $user->alternatename = '';
+                $user->confirmed = 0;
+                $user->firstaccess = 0;
+                $user->timecreated = time();
+                $user->mnethostid = $CFG->mnet_localhost_id;
+                $user->secret = random_string(15);
+                $user->auth = $CFG->registerauth;
 
-            // Exists - update organisation assignment.
+                $authplugin = get_auth_plugin($CFG->registerauth);
+                $userid = $authplugin->user_signup($user);
+            }
+
+            /*
+             *
+             * TODO: Include the following fields into the $user object
+             *
+             *
+            Array
+            (
+                [firstnamephonetic] => firstnamephonetic
+                [lastnamephonetic] => lastnamephonetic
+                [middlename] => middlename
+                [alternatename] => alternatename
+                [firstname] => firstname
+                [lastname] => lastname
+            )
+            */
+
+            // Insert/update user organisation.
             $now = time();
-            $posassignment = new stdClass();
-            $posassignment->id = $posassignid;
-            $posassignment->timemodified = $now;
-            $posassignment->usermodified = 0;
-            $posassignment->organisationid = $orgid;
-            $DB->update_record('pos_assignment', $posassignment);
 
-        } else {
+            if ($posassignid = $DB->get_field('pos_assignment', 'id', array('userid' => $userid))) {
 
-            // Does not exist - create organisation assignment.
-            $posassignment = new stdClass();
-            $posassignment->fullname = '';
-            $posassignment->shortname = '';
-            $posassignment->idnumber = '';
-            $posassignment->description = '';
-            $posassignment->timevalidfrom = '';
-            $posassignment->timevalidto = '';
-            $posassignment->timecreated = $now;
-            $posassignment->timemodified = $now;
-            $posassignment->usermodified = 0;
-            $posassignment->organisationid = $orgid;
-            $posassignment->userid = $userid;
-            $posassignment->appraiserid = '';
-            $posassignment->positionid = '';
-            $posassignment->reportstoid = '';
-            $posassignment->type = 1;
-            $posassignment->managerid = '';
-            $posassignment->managerpath = '';
-            $DB->insert_record('pos_assignment', $posassignment);
+                // Exists - update organisation assignment.
+                $now = time();
+                $posassignment = new stdClass();
+                $posassignment->id = $posassignid;
+                $posassignment->timemodified = $now;
+                $posassignment->usermodified = 0;
+                $posassignment->organisationid = $orgid;
+                $DB->update_record('pos_assignment', $posassignment);
+
+            } else {
+
+                // Does not exist - create organisation assignment.
+                $posassignment = new stdClass();
+                $posassignment->fullname = '';
+                $posassignment->shortname = '';
+                $posassignment->idnumber = '';
+                $posassignment->description = '';
+                $posassignment->timevalidfrom = '';
+                $posassignment->timevalidto = '';
+                $posassignment->timecreated = $now;
+                $posassignment->timemodified = $now;
+                $posassignment->usermodified = 0;
+                $posassignment->organisationid = $orgid;
+                $posassignment->userid = $userid;
+                $posassignment->appraiserid = '';
+                $posassignment->positionid = '';
+                $posassignment->reportstoid = '';
+                $posassignment->type = 1;
+                $posassignment->managerid = '';
+                $posassignment->managerpath = '';
+                $DB->insert_record('pos_assignment', $posassignment);
+            }
+
+            return array(fullname($user), $userid);
         }
 
-        return array(fullname($user), $userid);
     }
 }
