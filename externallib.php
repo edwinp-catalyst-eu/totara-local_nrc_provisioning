@@ -26,6 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/externallib.php');
+define('LOCAL_USERPROVISIONING_ORGANISATION_SHORTNAME', 'nrc');
 
 class local_userprovisioning_external extends external_api {
 
@@ -40,8 +41,7 @@ class local_userprovisioning_external extends external_api {
                 'employeeid' => new external_value(PARAM_TEXT),
                 'firstname' => new external_value(PARAM_TEXT),
                 'lastname' => new external_value(PARAM_TEXT),
-                'email' => new external_value(PARAM_TEXT),
-                'org' => new external_value(PARAM_TEXT)
+                'email' => new external_value(PARAM_TEXT)
             )
         );
     }
@@ -63,8 +63,7 @@ class local_userprovisioning_external extends external_api {
                             'email' => new external_value(PARAM_TEXT)
                         )
                     )
-                ),
-                'org' => new external_value(PARAM_TEXT)
+                )
             )
         );
     }
@@ -74,11 +73,11 @@ class local_userprovisioning_external extends external_api {
      *
      * @return array
      */
-    public static function create_org_user($employeeid, $firstname, $lastname, $email, $org) {
+    public static function create_org_user($employeeid, $firstname, $lastname, $email) {
         global $USER, $DB, $CFG;
 
         $userparams = self::validate_parameters(self::create_org_user_parameters(), array(
-            'employeeid' => $employeeid, 'firstname' => $firstname, 'lastname' => $lastname, 'email' => $email, 'org' => $org
+            'employeeid' => $employeeid, 'firstname' => $firstname, 'lastname' => $lastname, 'email' => $email
         ));
 
         $context = context_user::instance($USER->id);
@@ -88,10 +87,9 @@ class local_userprovisioning_external extends external_api {
             throw new moodle_exception('error:cannotcreateorgusers', 'local_userprovisioning');
         }
 
-        if ($orgid = $DB->get_field('org', 'id', array('shortname' => $userparams['org']))) {
-            list($name, $userid) = self::create_user($userparams, $orgid);
-            return array('name' => $name, 'userid' => $userid);
-        }
+        $orgid = $DB->get_field('org', 'id', array('shortname' => LOCAL_USERPROVISIONING_ORGANISATION_SHORTNAME));
+        list($name, $userid) = self::create_user($employeeid, $firstname, $lastname, $email, $orgid);
+        return array('name' => $name, 'userid' => $userid);
     }
 
     /**
@@ -167,7 +165,7 @@ class local_userprovisioning_external extends external_api {
      * @param int $orgid Organisation ID
      * @return array
      */
-    public static function create_user($userparams, $orgid) {
+    public static function create_user($employeeid, $firstname, $lastname, $email, $orgid) {
         global $DB;
 
         // Check if user exists by matching against employeeid custom user profile field.
@@ -176,28 +174,37 @@ class local_userprovisioning_external extends external_api {
 
             $sql = "SELECT userid
                       FROM {user_info_data}
-                     WHERE fieldid = ?
-                       AND ". $DB->sql_compare_text('data') . " = ?";
-            $params = array($employeeidfield, $userparams['employeeid']);
+                     WHERE fieldid = :employeeidfield
+                       AND ". $DB->sql_compare_text('data') . " = :employeeid";
+            $params = array(
+                'employeeidfield' => $employeeidfield,
+                'employeeid' => $employeeid
+            );
 
             if ($userid = $DB->get_field_sql($sql, $params)) {
 
                 // User exists - update user.
                 $user = new stdClass();
                 $user->id = $userid;
-                $user->firstname = $userparams['firstname'];
-                $user->lastname = $userparams['lastname'];
-                $user->email = $userparams['email'];
+                $user->firstname = $firstname;
+                $user->lastname = $lastname;
+                $user->email = $email;
                 $DB->update_record('user', $user);
+
+                $user = core_user::get_user($userid);
 
             } else {
 
                 // Create user.
                 $user = new stdClass();
-                $user->firstname = $userparams['firstname'];
-                $user->lastname = $userparams['lastname'];
-                $user->email = $userparams['email'];
-                $user->username = $userparams['email'];
+                $user->firstname = $firstname;
+                $user->firstnamephonetic = '';
+                $user->middlename = '';
+                $user->lastname = $lastname;
+                $user->lastnamephonetic = '';
+                $user->alternatename = '';
+                $user->email = $email;
+                $user->username = $email;
                 $user->password = 'Password123+'; // TODO: Stage 2 of development will change auth type to SAML.
                 $user->lang = 'en';
                 $user->alternatename = '';
@@ -211,22 +218,6 @@ class local_userprovisioning_external extends external_api {
                 $authplugin = get_auth_plugin($CFG->registerauth);
                 $userid = $authplugin->user_signup($user);
             }
-
-            /*
-             *
-             * TODO: Include the following fields into the $user object
-             *
-             *
-            Array
-            (
-                [firstnamephonetic] => firstnamephonetic
-                [lastnamephonetic] => lastnamephonetic
-                [middlename] => middlename
-                [alternatename] => alternatename
-                [firstname] => firstname
-                [lastname] => lastname
-            )
-            */
 
             // Insert/update user organisation.
             $now = time();
@@ -268,6 +259,5 @@ class local_userprovisioning_external extends external_api {
 
             return array(fullname($user), $userid);
         }
-
     }
 }
