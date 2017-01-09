@@ -32,6 +32,9 @@
  * @param string $email Email
  * @return string Response message
  */
+
+require_once($CFG->dirroot.'/user/lib.php');
+
 function create_nrc_user($employeeid, $firstname, $lastname, $email) {
     global $DB, $CFG;
 
@@ -93,7 +96,7 @@ function create_nrc_user($employeeid, $firstname, $lastname, $email) {
             $user->alternatename = '';
             $user->email = $email;
             $user->username = $email;
-            $user->password = 'Password123+'; // TODO: Stage 2 of development will change auth type to SAML.
+            $user->password = hash_internal_user_password('Admin123+');
             $user->lang = 'en';
             $user->alternatename = '';
             $user->confirmed = 0;
@@ -102,44 +105,45 @@ function create_nrc_user($employeeid, $firstname, $lastname, $email) {
             $user->mnethostid = $CFG->mnet_localhost_id;
             $user->secret = random_string(15);
             $user->auth = $CFG->registerauth;
+            $user->calendartype = $CFG->calendartype;
 
-            $authplugin = get_auth_plugin($CFG->registerauth);
-            $userid = $authplugin->user_signup($user, false);
+            if ($userid = user_create_user($user, false, false)) {
 
-            // Set the Employee Id value for the user.
-            $uid = new stdClass();
-            $uid->userid = $userid;
-            $uid->fieldid = $employeeidfield;
-            $uid->data = $employeeid;
-            $uid->dataformat = FORMAT_MOODLE;
-            $DB->insert_record('user_info_data', $uid);
+                // Set the Employee Id value for the user.
+                $uid = new stdClass();
+                $uid->userid = $userid;
+                $uid->fieldid = $employeeidfield;
+                $uid->data = $employeeid;
+                $uid->dataformat = FORMAT_MOODLE;
+                $DB->insert_record('user_info_data', $uid);
 
-            // Assign user to NRC organisation.
-            $now = time();
-            $posassignment = new stdClass();
-            $posassignment->fullname = '';
-            $posassignment->shortname = '';
-            $posassignment->idnumber = '';
-            $posassignment->description = '';
-            $posassignment->timevalidfrom = '';
-            $posassignment->timevalidto = '';
-            $posassignment->timecreated = $now;
-            $posassignment->timemodified = $now;
-            $posassignment->usermodified = 0;
-            $posassignment->organisationid = $nrcorganisationid;
-            $posassignment->userid = $userid;
-            $posassignment->appraiserid = '';
-            $posassignment->positionid = '';
-            $posassignment->reportstoid = '';
-            $posassignment->type = 1;
-            $posassignment->managerid = '';
-            $posassignment->managerpath = '';
-            $DB->insert_record('pos_assignment', $posassignment);
+                // Assign user to NRC organisation.
+                $now = time();
+                $posassignment = new stdClass();
+                $posassignment->fullname = '';
+                $posassignment->shortname = '';
+                $posassignment->idnumber = '';
+                $posassignment->description = '';
+                $posassignment->timevalidfrom = '';
+                $posassignment->timevalidto = '';
+                $posassignment->timecreated = $now;
+                $posassignment->timemodified = $now;
+                $posassignment->usermodified = 0;
+                $posassignment->organisationid = $nrcorganisationid;
+                $posassignment->userid = $userid;
+                $posassignment->appraiserid = '';
+                $posassignment->positionid = '';
+                $posassignment->reportstoid = '';
+                $posassignment->type = 1;
+                $posassignment->managerid = '';
+                $posassignment->managerpath = '';
+                $DB->insert_record('pos_assignment', $posassignment);
 
-            $langstrings = new stdClass();
-            $langstrings->fullname = fullname($user);
-            $langstrings->employeeid = $employeeidfield;
-            $responsemsg = get_string('response:usercreated', 'local_nrc_provisioning', $langstrings);
+                $langstrings = new stdClass();
+                $langstrings->fullname = fullname($user);
+                $langstrings->employeeid = $employeeidfield;
+                $responsemsg = get_string('response:usercreated', 'local_nrc_provisioning', $langstrings);
+            }
         }
     }
 
