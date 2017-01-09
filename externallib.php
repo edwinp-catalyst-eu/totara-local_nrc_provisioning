@@ -67,9 +67,7 @@ class local_nrc_provisioning_external extends external_api {
             throw new moodle_exception('error:cannotcreatenrcusers', 'local_nrc_provisioning');
         }
 
-        list($name, $userid) = create_nrc_user($employeeid, $firstname, $lastname, $email);
-
-        return array('name' => $name, 'userid' => $userid);
+        return create_nrc_user($employeeid, $firstname, $lastname, $email);
     }
 
     /**
@@ -78,11 +76,6 @@ class local_nrc_provisioning_external extends external_api {
      * @return external_single_structure
      */
     public static function create_user_returns() {
-        return new external_single_structure(
-            array(
-                'name' => new external_value(PARAM_TEXT, 'User full name'),
-                'userid' => new external_value(PARAM_INT, 'User ID'),
-            )
-        );
+        return new external_value(PARAM_TEXT);
     }
 }

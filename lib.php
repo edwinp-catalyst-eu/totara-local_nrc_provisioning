@@ -24,38 +24,62 @@
  */
 
 /**
- * Creates user and assigns to NRC organisation.
+ * Creates/updates user and assigns to NRC organisation.
  *
- *
- * @return array
+ * @param int $employeeid Employee Id
+ * @param string $firstname Firstname
+ * @param string $lastname Lastname
+ * @param string $email Email
+ * @return string Response message
  */
 function create_nrc_user($employeeid, $firstname, $lastname, $email) {
-    global $DB;
+    global $DB, $CFG;
 
-    // Match user by custom user profile field 'employeeid'.
+    $nrcorganisationid = $DB->get_field('org', 'id', array('shortname' => LOCAL_USERPROVISIONING_NRC_ORG_SHORTNAME));
+
+    $transaction = $DB->start_delegated_transaction();
+
+    $responsemsg = get_string('response:customfieldrequiresconfig', 'local_nrc_provisioning');
+
+    // Ensure that custom user profile feed exists.
     if ($employeeidfield = $DB->get_field('user_info_field', 'id',
         array('shortname' => get_string('employeeiduifshortname', 'local_nrc_provisioning')))) {
 
-        $sql = "SELECT userid
-                  FROM {user_info_data}
-                 WHERE fieldid = :employeeidfield
-                   AND ". $DB->sql_compare_text('data') . " = :employeeid";
+        $sql = "SELECT uid.userid, u.firstname, u.lastname, u.email, u.username, pa.id AS posassignid
+                  FROM {user_info_data} uid
+                  JOIN {pos_assignment} pa ON pa.userid = uid.userid
+                  JOIN {user} u ON u.id = uid.userid
+                 WHERE uid.fieldid = :employeeidfield
+                   AND ". $DB->sql_compare_text('uid.data') . " = :employeeid
+                   AND pa.organisationid = :nrcorganisationid";
         $params = array(
             'employeeidfield' => $employeeidfield,
-            'employeeid' => $employeeid
+            'employeeid' => $employeeid,
+            'nrcorganisationid' => $nrcorganisationid
         );
 
-        if ($userid = $DB->get_field_sql($sql, $params)) {
+        if ($record = $DB->get_record_sql($sql, $params)) {
 
-            // User exists - update user.
-            $user = new stdClass();
-            $user->id = $userid;
-            $user->firstname = $firstname;
-            $user->lastname = $lastname;
-            $user->email = $email;
-            $DB->update_record('user', $user);
+            $user = core_user::get_user($record->userid);
 
-            $user = core_user::get_user($userid);
+            // Existing user identified.
+            if ($record->firstname != $firstname || $record->lastname != $lastname
+                || $record->email != $email || $record->username != $email) {
+
+                // New details - update user.
+                $user = new stdClass();
+                $user->id = $record->userid;
+                $user->firstname = $firstname;
+                $user->lastname = $lastname;
+                $user->username = $email;
+                $user->email = $email;
+                $DB->update_record('user', $user);
+                $responsemsg = get_string('response:useridentifiedandupdated', 'local_nrc_provisioning', fullname($user));
+            } else {
+
+                // Details unchanged.
+                $responsemsg = get_string('response:useridentifiednotupdated', 'local_nrc_provisioning', fullname($user));
+            }
 
         } else {
 
@@ -80,27 +104,18 @@ function create_nrc_user($employeeid, $firstname, $lastname, $email) {
             $user->auth = $CFG->registerauth;
 
             $authplugin = get_auth_plugin($CFG->registerauth);
-            $userid = $authplugin->user_signup($user);
-        }
+            $userid = $authplugin->user_signup($user, false);
 
-        // Insert/update user organisation.
-        $now = time();
-        $orgid = $DB->get_field('org', 'id', array('shortname' => LOCAL_USERPROVISIONING_NRC_ORG_SHORTNAME));
+            // Set the Employee Id value for the user.
+            $uid = new stdClass();
+            $uid->userid = $userid;
+            $uid->fieldid = $employeeidfield;
+            $uid->data = $employeeid;
+            $uid->dataformat = FORMAT_MOODLE;
+            $DB->insert_record('user_info_data', $uid);
 
-        if ($posassignid = $DB->get_field('pos_assignment', 'id', array('userid' => $userid))) {
-
-            // Exists - update organisation assignment.
+            // Assign user to NRC organisation.
             $now = time();
-            $posassignment = new stdClass();
-            $posassignment->id = $posassignid;
-            $posassignment->timemodified = $now;
-            $posassignment->usermodified = 0;
-            $posassignment->organisationid = $orgid;
-            $DB->update_record('pos_assignment', $posassignment);
-
-        } else {
-
-            // Does not exist - create organisation assignment.
             $posassignment = new stdClass();
             $posassignment->fullname = '';
             $posassignment->shortname = '';
@@ -111,7 +126,7 @@ function create_nrc_user($employeeid, $firstname, $lastname, $email) {
             $posassignment->timecreated = $now;
             $posassignment->timemodified = $now;
             $posassignment->usermodified = 0;
-            $posassignment->organisationid = $orgid;
+            $posassignment->organisationid = $nrcorganisationid;
             $posassignment->userid = $userid;
             $posassignment->appraiserid = '';
             $posassignment->positionid = '';
@@ -120,8 +135,15 @@ function create_nrc_user($employeeid, $firstname, $lastname, $email) {
             $posassignment->managerid = '';
             $posassignment->managerpath = '';
             $DB->insert_record('pos_assignment', $posassignment);
-        }
 
-        return array(fullname($user), $userid);
+            $langstrings = new stdClass();
+            $langstrings->fullname = fullname($user);
+            $langstrings->employeeid = $employeeidfield;
+            $responsemsg = get_string('response:usercreated', 'local_nrc_provisioning', $langstrings);
+        }
     }
+
+    $transaction->allow_commit();
+
+    return $responsemsg;
 }
