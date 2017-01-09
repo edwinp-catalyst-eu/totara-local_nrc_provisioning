@@ -18,15 +18,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * @package    totara
- * @subpackage local_userprovisioning
+ * @subpackage local_nrc_provisioning
  * @copyright  Catalyst IT Europe Ltd 2017
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['pluginname'] = 'Organisation User Provisioning';
+$string['pluginname'] = 'NRC User Provisioning';
 $string['employeeid'] = 'Employee ID';
 $string['employeeiduifshortname'] = 'employeeid';
-$string['error:cannotcreateorgusers'] = 'Not permitted to create organisation users';
-$string['userprovisioning:createorgusers'] = 'Create organisation user via provisioning web service';
+$string['error:cannotcreatenrcusers'] = 'Not permitted to create NRC users';
+$string['nrc_provisioning:createuser'] = 'Create NRC user via provisioning web service';

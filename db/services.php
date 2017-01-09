@@ -18,49 +18,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * @package    totara
- * @subpackage local_userprovisioning
+ * @subpackage local_nrc_provisioning
  * @copyright  Catalyst IT Europe Ltd 2017
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-/**
- * User provisioning plugin external functions and service definitions.
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 $functions = array(
-    'local_userprovisioning_create_org_user' => array(
-        'classname'   => 'local_userprovisioning_external',
-        'methodname'  => 'create_org_user',
-        'classpath'   => 'local/userprovisioning/externallib.php',
-        'description' => 'Create user and assign to organisation',
+    'create_user' => array(
+        'classname'   => 'local_nrc_provisioning_external',
+        'methodname'  => 'create_user',
+        'classpath'   => 'local/nrc_provisioning/externallib.php',
+        'description' => 'Create user assigned to NRC organisation',
         'type'        => 'write',
-        'capabilities'=> 'local/userprovisioning:createorgusers'
-    ),
-    'local_userprovisioning_create_org_users' => array(
-        'classname'   => 'local_userprovisioning_external',
-        'methodname'  => 'create_org_users',
-        'classpath'   => 'local/userprovisioning/externallib.php',
-        'description' => 'Create multiple users and assign to organisation',
-        'type'        => 'write',
-        'capabilities'=> 'local/userprovisioning:createorgusers'
+        'capabilities'=> 'local/nrc_provisioning:createuser'
     )
 );
 
 $services = array(
-    'Create organisation user' => array(
-        'functions' => array('local_userprovisioning_create_org_user'),
+    'NRC OKTA User Provisioning' => array(
+        'functions' => array(
+            'create_user',
+        ),
         'restrictedusers' => 0,
         'enabled' => 1,
-        'shortname' => LOCAL_USERPROVISIONING_CREATE_ORG_USER,
-        'downloadfiles' => 1
-    ),
-    'Create organisation users' => array(
-        'functions' => array('local_userprovisioning_create_org_users'),
-        'restrictedusers' => 0,
-        'enabled' => 1,
-        'shortname' => LOCAL_USERPROVISIONING_CREATE_ORG_USERS,
+        'shortname' => 'NRC_OKTA',
         'downloadfiles' => 1
     )
 );

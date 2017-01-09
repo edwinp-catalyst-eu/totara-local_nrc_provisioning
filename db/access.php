@@ -18,7 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * @package    totara
- * @subpackage local_userprovisioning
+ * @subpackage local_nrc_provisioning
  * @copyright  Catalyst IT Europe Ltd 2017
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -26,8 +26,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $capabilities = array(
-    'local/userprovisioning:createorgusers' => array(
-        'captype'      => 'write',
+    'local/nrc_provisioning:createuser' => array(
+        'captype' => 'write',
         'contextlevel' => CONTEXT_SYSTEM
     )
 );

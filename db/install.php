@@ -18,7 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * @package    totara
- * @subpackage local_userprovisioning
+ * @subpackage local_nrc_provisioning
  * @copyright  Catalyst IT Europe Ltd 2017
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -30,7 +30,7 @@ defined('MOODLE_INTERNAL') || die();
  *
  * @return bool
  */
-function xmldb_local_userprovisioning_install() {
+function xmldb_local_nrc_provisioning_install() {
     global $DB;
 
     // If necessary, create 'Employee ID' custom user profile field.
@@ -40,8 +40,8 @@ function xmldb_local_userprovisioning_install() {
         $sortorder = $DB->count_records('user_info_field', array('categoryid' => $categoryid)) + 1;
 
         $uif = new stdClass();
-        $uif->shortname = get_string('employeeiduifshortname', 'local_userprovisioning');
-        $uif->name = get_string('employeeid', 'local_userprovisioning');
+        $uif->shortname = get_string('employeeiduifshortname', 'local_nrc_provisioning');
+        $uif->name = get_string('employeeid', 'local_nrc_provisioning');
         $uif->datatype = 'text';
         $uif->description = '';
         $uif->descriptionformat = FORMAT_HTML;
