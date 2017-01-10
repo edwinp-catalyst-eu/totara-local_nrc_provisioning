@@ -33,7 +33,7 @@ define('LOCAL_USERPROVISIONING_NRC_ORG_SHORTNAME', 'nrc');
 class local_nrc_provisioning_external extends external_api {
 
     /**
-     * Returns description of provision_nrc_user method parameters
+     * Defines expected parameters for create_user method
      *
      * @return external_function_parameters
      */
@@ -49,9 +49,9 @@ class local_nrc_provisioning_external extends external_api {
     }
 
     /**
-     * Returns created user fullname and ID
+     * Creates user
      *
-     * @return array
+     * @return string
      */
     public static function create_user($employeeid, $firstname, $lastname, $email) {
         global $USER, $DB, $CFG;
@@ -71,7 +71,7 @@ class local_nrc_provisioning_external extends external_api {
     }
 
     /**
-     * Returns description of provision_nrc_user method result value
+     * Defines response from create_user method
      *
      * @return external_single_structure
      */

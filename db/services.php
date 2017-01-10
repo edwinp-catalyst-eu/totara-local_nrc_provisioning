@@ -25,17 +25,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$functions = array(
-    'create_user' => array(
-        'classname'   => 'local_nrc_provisioning_external',
-        'methodname'  => 'create_user',
-        'classpath'   => 'local/nrc_provisioning/externallib.php',
-        'description' => 'Create user assigned to NRC organisation',
-        'type'        => 'write',
-        'capabilities'=> 'local/nrc_provisioning:createuser'
-    )
-);
-
 $services = array(
     'NRC OKTA User Provisioning' => array(
         'functions' => array(
@@ -45,5 +34,16 @@ $services = array(
         'enabled' => 1,
         'shortname' => 'NRC_OKTA',
         'downloadfiles' => 1
+    )
+);
+
+$functions = array(
+    'create_user' => array(
+        'classname'   => 'local_nrc_provisioning_external',
+        'methodname'  => 'create_user',
+        'classpath'   => 'local/nrc_provisioning/externallib.php',
+        'description' => 'Create user assigned to NRC organisation',
+        'type'        => 'write',
+        'capabilities'=> 'local/nrc_provisioning:createuser'
     )
 );
