@@ -88,6 +88,9 @@ function create_nrc_user($employeeid, $firstname, $lastname, $email) {
 
             // Create user.
             $user = new stdClass();
+            $user->auth = 'manual'; // TODO: Change to SAML once implemented.
+            $user->confirmed = 1;
+            $user->mnethostid = $CFG->mnet_localhost_id;
             $user->firstname = $firstname;
             $user->firstnamephonetic = '';
             $user->middlename = '';
@@ -96,15 +99,12 @@ function create_nrc_user($employeeid, $firstname, $lastname, $email) {
             $user->alternatename = '';
             $user->email = $email;
             $user->username = $email;
-            $user->password = hash_internal_user_password('Admin123+');
+            $user->password = hash_internal_user_password('Admin123+'); // TODO: This will be removed when using SAML.
             $user->lang = 'en';
             $user->alternatename = '';
-            $user->confirmed = 0;
             $user->firstaccess = 0;
             $user->timecreated = time();
-            $user->mnethostid = $CFG->mnet_localhost_id;
             $user->secret = random_string(15);
-            $user->auth = $CFG->registerauth;
             $user->calendartype = $CFG->calendartype;
 
             if ($userid = user_create_user($user, false, false)) {
@@ -141,7 +141,7 @@ function create_nrc_user($employeeid, $firstname, $lastname, $email) {
 
                 $langstrings = new stdClass();
                 $langstrings->fullname = fullname($user);
-                $langstrings->employeeid = $employeeidfield;
+                $langstrings->employeeid = $employeeid;
                 $responsemsg = get_string('response:usercreated', 'local_nrc_provisioning', $langstrings);
             }
         }

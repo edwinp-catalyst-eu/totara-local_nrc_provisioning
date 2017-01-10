@@ -31,6 +31,6 @@ $string['employeeiduifshortname'] = 'employeeid';
 $string['error:cannotcreatenrcusers'] = 'Not permitted to create NRC users';
 $string['nrc_provisioning:createuser'] = 'Create NRC user via provisioning web service';
 $string['response:customfieldrequiresconfig'] = 'Custom user profile field Employee Id requires correct configuration.';
-$string['response:usercreated'] = 'User \'{$a->fullname}\' with Employee Id {$a->employeeid} created and assigned to NRC organisation.';
+$string['response:usercreated'] = 'User \'{$a->fullname}\' with Employee Id \'{$a->employeeid}\' created and assigned to NRC organisation.';
 $string['response:useridentifiedandupdated'] = 'User \'{$a}\' identified by Employee Id and NRC organisation. Details updated with new values.';
 $string['response:useridentifiednotupdated'] = 'User \'{$a}\' identified by Employee Id and NRC organisation. No details require updating.';
